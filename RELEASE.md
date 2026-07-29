@@ -8,7 +8,7 @@ Tag-triggered GitHub Actions builds (macOS ARM/Intel, Windows, Linux), signs upd
 
 Keys live locally (never commit the private key):
 
-- Private: `~/.tauri/wcimd-media.key` (or regenerate as `~/.tauri/loopserve.key`)
+- Private: `~/.tauri/loopserve.key` (**never commit**)
 - Public key is embedded in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`
 
 ```bash

@@ -40,7 +40,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNEMjUzMEIyRERBNThDQjgKUldTNGpLWGRzakFsUGVnWVBXSXEwVlZuSFVPSzN2UlNJVmdjK3pOdzFEZFhHYzJobkw0Z3F4TjIK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdDREUxNUU0MUUxNzkwOUIKUldTYmtCY2U1QlhlZklIS2t6RXNDbXBqSWlFazVkU0xhWmo3OG9HQVprK3FnR3hLaTUyZlB3REwK",
       "endpoints": [
         "https://github.com/crownemmanuel/LoopServe/releases/latest/download/latest.json"
       ]

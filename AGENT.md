@@ -13,10 +13,10 @@ Tauri signs release artifacts with a **minisign** keypair.
 | **Private key (CI)** | GitHub → Settings → Secrets → Actions → `TAURI_SIGNING_PRIVATE_KEY` | N/A (secret) |
 | Optional password | Secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | N/A |
 
-Current public key is already set in `tauri.conf.json`. The matching private key on this machine was generated at:
+Current public key is already set in `tauri.conf.json`. The matching private key on this machine:
 
 ```text
-~/.tauri/wcimd-media.key
+~/.tauri/loopserve.key
 ```
 
 Put the **full contents** of that file into the GitHub secret `TAURI_SIGNING_PRIVATE_KEY` before the first tagged release. Without it, CI cannot produce signed `latest.json` updater artifacts.
