@@ -1,0 +1,456 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "LoopServe API",
+    "description": "Looping media server API for listing assets, uploading media, and setting the live asset (Bitfocus Companion friendly).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This server"
+    }
+  ],
+  "tags": [
+    { "name": "Assets", "description": "Media asset catalog" },
+    { "name": "Live", "description": "Currently on-air asset" },
+    { "name": "Events", "description": "Realtime live updates" },
+    { "name": "System", "description": "Device power controls" }
+  ],
+  "paths": {
+    "/api/assets": {
+      "get": {
+        "tags": ["Assets"],
+        "summary": "List assets",
+        "description": "Returns all media assets and the current live asset id. Useful for Companion button labels.",
+        "operationId": "listAssets",
+        "responses": {
+          "200": {
+            "description": "Asset list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "liveId": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": "abc123xyz0"
+                    },
+                    "assets": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/AssetWithLive" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Assets"],
+        "summary": "Upload asset",
+        "description": "Upload a video or image. Form field `file` is required; `name` is optional display name.",
+        "operationId": "uploadAsset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Video or image file"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Optional display name",
+                    "example": "Worship Opener"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asset created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asset": { "$ref": "#/components/schemas/Asset" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets/{id}": {
+      "put": {
+        "tags": ["Assets"],
+        "summary": "Update asset (keep id)",
+        "description": "Replace the media file and/or rename the asset without changing its id. Useful for Companion buttons that target a stable asset id. Send multipart form-data with optional `file` and/or `name`, or JSON `{ \"name\": \"...\" }` for rename-only.",
+        "operationId": "updateAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Replacement video or image"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Optional new display name"
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Worship Opener v2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated asset (same id)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asset": { "$ref": "#/components/schemas/Asset" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid update",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Assets"],
+        "summary": "Delete asset",
+        "operationId": "deleteAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean", "example": true },
+                    "deleted": { "$ref": "#/components/schemas/Asset" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/live": {
+      "get": {
+        "tags": ["Live"],
+        "summary": "Get live asset",
+        "operationId": "getLive",
+        "responses": {
+          "200": {
+            "description": "Current live asset (null when nothing is live)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "live": {
+                      "nullable": true,
+                      "allOf": [{ "$ref": "#/components/schemas/Asset" }]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Live"],
+        "summary": "Set live asset",
+        "description": "Set live by `id` or `name`. Send `{ \"id\": null }` (or omit both) to clear.",
+        "operationId": "setLive",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "abc123xyz0"
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "Worship Opener"
+                  }
+                }
+              },
+              "examples": {
+                "byId": {
+                  "summary": "Set live by id",
+                  "value": { "id": "abc123xyz0" }
+                },
+                "byName": {
+                  "summary": "Set live by name",
+                  "value": { "name": "Worship Opener" }
+                },
+                "clear": {
+                  "summary": "Clear live",
+                  "value": { "id": null }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated live state",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LiveResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/live/{id}": {
+      "post": {
+        "tags": ["Live"],
+        "summary": "Set live by id (Companion)",
+        "description": "Set the given asset live. Use `clear` or `none` as the id to clear live.",
+        "operationId": "setLiveById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Asset id, or `clear` / `none` to clear live",
+            "schema": { "type": "string" },
+            "examples": {
+              "asset": { "value": "abc123xyz0" },
+              "clear": { "value": "clear" }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated live state",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LiveResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/shutdown": {
+      "post": {
+        "tags": ["System"],
+        "summary": "Shut down the device",
+        "description": "Requests a clean OS shutdown. Prefer this over pulling power.",
+        "operationId": "shutdownDevice",
+        "responses": {
+          "200": {
+            "description": "Shutdown requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/reboot": {
+      "post": {
+        "tags": ["System"],
+        "summary": "Reboot the device",
+        "operationId": "rebootDevice",
+        "responses": {
+          "200": {
+            "description": "Reboot requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Live event stream (SSE)",
+        "description": "Server-Sent Events stream. Each message is JSON: `{ \"live\": Asset | null }`.",
+        "operationId": "liveEvents",
+        "responses": {
+          "200": {
+            "description": "SSE stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "data: {\"live\":null}\n\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "abc123xyz0" },
+          "name": { "type": "string", "example": "Worship Opener" },
+          "type": { "type": "string", "enum": ["video", "image"] },
+          "filename": { "type": "string" },
+          "originalName": { "type": "string" },
+          "url": { "type": "string", "example": "/media/1710000000-xyz.mp4" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AssetWithLive": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Asset" },
+          {
+            "type": "object",
+            "properties": {
+              "live": { "type": "boolean" }
+            }
+          }
+        ]
+      },
+      "LiveResponse": {
+        "type": "object",
+        "properties": {
+          "live": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/Asset" }]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

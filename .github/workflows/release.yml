@@ -1,0 +1,156 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    create-release:
+        runs-on: ubuntu-latest
+        outputs:
+            release_id: ${{ steps.create-release.outputs.id }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Get version from tag
+              id: get_version
+              run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+            - name: Create Release
+              id: create-release
+              uses: actions/github-script@v6
+              with:
+                  script: |
+                      const tagName = context.ref.replace('refs/tags/', '');
+                      const version = '${{ steps.get_version.outputs.VERSION }}';
+                      const releaseName = `LoopServe v${version}`;
+                      const releaseBody = `## What's New
+
+                      See the [changelog](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CHANGELOG.md) for details.
+
+                      ## Download
+
+                      Download the appropriate installer for your platform below.
+
+                      ### Auto-updates
+
+                      Signed builds publish \`latest.json\` for the in-app updater. Users can choose **Update now**, **Later**, or **Skip this version**.`;
+
+                      const release = await github.rest.repos.createRelease({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        tag_name: tagName,
+                        name: releaseName,
+                        body: releaseBody,
+                        draft: false,
+                        prerelease: false
+                      });
+
+                      core.setOutput('id', release.data.id.toString());
+
+    build-tauri:
+        needs: create-release
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - platform: "macos-latest"
+                      args: "--target aarch64-apple-darwin"
+                    - platform: "macos-latest"
+                      args: "--target x86_64-apple-darwin"
+                    - platform: "ubuntu-22.04"
+                      args: ""
+                    - platform: "windows-latest"
+                      args: ""
+
+        runs-on: ${{ matrix.platform }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+
+            - name: Install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+            - name: Install dependencies (Ubuntu only)
+              if: matrix.platform == 'ubuntu-22.04'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev pkg-config
+
+            - name: Install frontend dependencies
+              run: npm install
+
+            - name: Import Apple certificate (macOS only)
+              if: matrix.platform == 'macos-latest'
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+                  KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+              run: |
+                  if [ -z "$APPLE_CERTIFICATE" ] || [ -z "$APPLE_CERTIFICATE_PASSWORD" ] || [ -z "$KEYCHAIN_PASSWORD" ]; then
+                    echo "Apple signing secrets not set — building unsigned macOS artifacts."
+                    exit 0
+                  fi
+
+                  echo "$APPLE_CERTIFICATE" | base64 -d > certificate.p12 2>/dev/null || echo "$APPLE_CERTIFICATE" | base64 -D > certificate.p12
+                  security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+                  security default-keychain -s build.keychain
+                  security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+                  security set-keychain-settings -t 3600 -u build.keychain
+                  security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+                  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+
+                  CERT_LINE=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -n 1)
+                  CERT_ID=$(echo "$CERT_LINE" | awk -F\" '{print $2}')
+                  if [ -z "$CERT_ID" ]; then
+                    echo "Developer ID Application identity not found in keychain." >&2
+                    security find-identity -v -p codesigning build.keychain
+                    exit 1
+                  fi
+
+                  echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> "$GITHUB_ENV"
+                  echo "Using Apple signing identity: $CERT_ID"
+
+            - name: Build the app
+              uses: tauri-apps/tauri-action@v0
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+                  APPLE_CERTIFICATE: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE || '' }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+                  APPLE_SIGNING_IDENTITY: ${{ matrix.platform == 'macos-latest' && env.APPLE_SIGNING_IDENTITY || '' }}
+                  APPLE_ID: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_ID || '' }}
+                  APPLE_PASSWORD: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_PASSWORD || '' }}
+                  APPLE_TEAM_ID: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_TEAM_ID || '' }}
+              with:
+                  releaseId: ${{ needs.create-release.outputs.release_id }}
+                  args: ${{ matrix.args }}
+
+    publish-release:
+        runs-on: ubuntu-latest
+        needs: [create-release, build-tauri]
+        steps:
+            - name: Publish release
+              uses: actions/github-script@v6
+              with:
+                  script: |
+                      const releaseId = '${{ needs.create-release.outputs.release_id }}';
+                      await github.rest.repos.updateRelease({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        release_id: parseInt(releaseId),
+                        draft: false,
+                        prerelease: false
+                      });

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoopServe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Looping media server</p>
+          <h1>LoopServe</h1>
+          <p class="lede">
+            Everything runs in this app — local server, media library, and fullscreen output. No Pi
+            or separate web project required.
+          </p>
+        </div>
+        <nav class="tabs" role="tablist">
+          <button class="tab active" data-tab="control" type="button">Control</button>
+          <button class="tab" data-tab="admin" type="button">Media library</button>
+        </nav>
+      </header>
+
+      <section id="panel-control" class="tab-panel active">
+        <section class="card status-card">
+          <div>
+            <h2>Built-in server</h2>
+            <p id="server-url" class="mono">Starting…</p>
+            <p id="media-path" class="muted path"></p>
+          </div>
+          <span id="server-pill" class="pill">Booting</span>
+        </section>
+
+        <section class="card">
+          <h2>Fullscreen output</h2>
+          <p class="muted">
+            This is the black “Waiting for live media…” screen. Put it on your switch / second
+            monitor, then set something live in Media library.
+          </p>
+          <label class="field">
+            <span>Output monitor</span>
+            <select id="monitor-select"></select>
+          </label>
+          <label class="check">
+            <input id="auto-start" type="checkbox" />
+            <span>Open fullscreen output when the app starts</span>
+          </label>
+          <div class="row">
+            <button id="show-display" class="btn primary" type="button">
+              Show fullscreen output
+            </button>
+            <button id="hide-display" class="btn ghost" type="button">Close output</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Settings</h2>
+          <label class="field">
+            <span>HTTP port</span>
+            <input id="port-input" type="number" min="1" max="65535" />
+          </label>
+          <p class="muted tip">Port changes apply after you restart the app.</p>
+          <div class="row">
+            <button id="save-settings" class="btn primary" type="button">Save settings</button>
+            <button id="open-media" class="btn ghost" type="button">Open media folder</button>
+          </div>
+          <p id="settings-status" class="status" hidden></p>
+        </section>
+
+        <section class="card">
+          <h2>Updates</h2>
+          <p class="muted">
+            App version <span id="app-version" class="mono inline">…</span>. Checks GitHub Releases;
+            you choose when to install.
+          </p>
+          <div class="row">
+            <button id="check-updates" class="btn ghost" type="button">Check for updates</button>
+          </div>
+          <p id="update-status" class="status" hidden></p>
+        </section>
+
+        <section class="card">
+          <h2>Companion / LAN</h2>
+          <p class="muted">
+            Other devices can use the same API at the server URL above. Companion module host =
+            this computer, port = value above.
+          </p>
+          <div class="row">
+            <button id="open-docs" class="btn ghost" type="button">Open API schema</button>
+            <button id="goto-admin" class="btn ghost" type="button">Go to media library</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="panel-admin" class="tab-panel">
+        <section class="card admin-card">
+          <div class="admin-toolbar">
+            <div>
+              <h2>Media library</h2>
+              <p class="muted">Upload, replace, and set live assets. Served by this app.</p>
+            </div>
+            <button id="reload-admin" class="btn ghost" type="button">Reload</button>
+          </div>
+          <iframe id="admin-frame" title="Media library" src="about:blank"></iframe>
+        </section>
+      </section>
+    </div>
+
+    <div id="update-modal" class="update-overlay" hidden>
+      <div class="update-dialog" role="dialog" aria-labelledby="update-title" aria-modal="true">
+        <h3 id="update-title">Update available</h3>
+        <p id="update-version" class="muted"></p>
+        <p id="update-body" class="muted" hidden></p>
+        <div id="update-progress" class="update-progress" hidden>
+          <div class="update-progress-track">
+            <div id="update-progress-fill" class="update-progress-fill"></div>
+          </div>
+          <span id="update-progress-text">0%</span>
+        </div>
+        <div id="update-actions" class="update-actions">
+          <button id="update-now" class="btn primary" type="button">Update now</button>
+          <div class="row">
+            <button id="update-later" class="btn ghost" type="button">Later</button>
+            <button id="update-skip" class="btn ghost" type="button">Skip this version</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

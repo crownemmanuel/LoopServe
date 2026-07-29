@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoopServe Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">LoopServe</p>
+        <h1>Admin</h1>
+      </div>
+      <div class="header-actions">
+        <a class="btn ghost" href="/" target="_blank" rel="noopener">Open display</a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section class="panel live-panel">
+        <div>
+          <h2>Currently live</h2>
+          <p id="live-label" class="muted">Nothing live</p>
+        </div>
+        <button id="clear-live" class="btn danger" type="button">Clear live</button>
+      </section>
+
+      <section class="panel power-panel" id="power-panel" hidden>
+        <div>
+          <h2>Device power</h2>
+          <p class="muted">Shut down cleanly before unplugging power. Prefer this over pulling the cable.</p>
+          <p id="power-status" class="status" hidden></p>
+        </div>
+        <div class="power-actions">
+          <button id="reboot-device" class="btn ghost" type="button">Reboot</button>
+          <button id="shutdown-device" class="btn danger" type="button">Shut down</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Upload media</h2>
+        <form id="upload-form" class="upload-form">
+          <label class="field">
+            <span>Display name (optional)</span>
+            <input id="asset-name" name="name" type="text" placeholder="e.g. Worship Opener" />
+          </label>
+          <label class="field file-field">
+            <span>Video or image</span>
+            <input id="asset-file" name="file" type="file" accept="video/*,image/*" required />
+          </label>
+          <button class="btn primary" type="submit">Upload</button>
+        </form>
+        <p id="upload-status" class="status" hidden></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Assets</h2>
+          <button id="refresh" class="btn ghost" type="button">Refresh</button>
+        </div>
+        <div id="asset-list" class="asset-list"></div>
+        <input id="replace-file" type="file" accept="video/*,image/*" hidden />
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

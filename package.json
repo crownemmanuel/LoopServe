@@ -1,0 +1,29 @@
+{
+  "name": "loopserve",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LoopServe — open-source looping media server for stage and stream displays",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crownemmanuel/LoopServe.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}
