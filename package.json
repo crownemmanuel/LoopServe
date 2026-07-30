@@ -1,7 +1,7 @@
 {
   "name": "loopserve",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "LoopServe — open-source looping media server for stage and stream displays",
   "license": "MIT",
   "repository": {

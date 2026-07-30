@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Fix unsigned macOS release packaging when Apple signing secrets are not configured
+
 ## 0.1.0
 
 - Initial open-source release as **LoopServe**

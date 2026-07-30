@@ -1,6 +1,6 @@
 [package]
 name = "loopserve"
-version = "0.1.0"
+version = "0.1.1"
 description = "LoopServe — looping media server desktop app"
 authors = ["LoopServe contributors"]
 edition = "2021"
