@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Add trigger banks: a Stream Deck–style grid page for mapping assets to stable bank ids
+  (`/api/trigger/:bankId`), so Companion buttons never need editing when the target asset changes
+- Optional helper to push a bank's label and thumbnail to a Companion button
+- Companion module ("Trigger Bank" action) moved in-repo under `other_app/`
+
 ## 0.1.1
 
 - Fix unsigned macOS release packaging when Apple signing secrets are not configured
