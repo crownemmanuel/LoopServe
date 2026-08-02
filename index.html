@@ -25,6 +25,7 @@
         </div>
         <nav class="tabs" role="tablist">
           <button class="tab active" data-tab="control" type="button">Control</button>
+          <button class="tab" data-tab="banks" type="button">Banks</button>
           <button class="tab" data-tab="admin" type="button">Media library</button>
         </nav>
       </header>
@@ -97,6 +98,95 @@
             <button id="open-docs" class="btn ghost" type="button">Open API schema</button>
             <button id="goto-admin" class="btn ghost" type="button">Go to media library</button>
           </div>
+        </section>
+      </section>
+
+      <section id="panel-banks" class="tab-panel">
+        <section class="card">
+          <div class="admin-toolbar">
+            <div>
+              <h2>Trigger banks</h2>
+              <p class="muted">
+                Companion buttons fire a bank number, not an asset. Remap a bank here and the same
+                Stream Deck button plays something new — no Companion edits.
+              </p>
+            </div>
+            <button id="banks-refresh" class="btn ghost" type="button">Refresh</button>
+          </div>
+
+          <div class="deck-size">
+            <label class="field inline">
+              <span>Rows</span>
+              <input id="grid-rows" type="number" min="1" max="16" />
+            </label>
+            <label class="field inline">
+              <span>Columns</span>
+              <input id="grid-columns" type="number" min="1" max="16" />
+            </label>
+            <button id="grid-apply" class="btn ghost" type="button">Apply layout</button>
+          </div>
+
+          <div id="deck" class="deck" role="group" aria-label="Trigger banks"></div>
+          <p id="banks-status" class="status" hidden></p>
+        </section>
+
+        <section class="card">
+          <h2>Bank <span id="bank-selected" class="mono inline">1</span></h2>
+          <p class="muted">
+            Companion action: <span class="mono inline">Trigger Bank</span> with bank id
+            <span id="bank-endpoint" class="mono inline">1</span>.
+          </p>
+
+          <label class="field">
+            <span>Asset</span>
+            <select id="bank-asset"></select>
+          </label>
+          <label class="field">
+            <span>Button label (optional — defaults to the asset name)</span>
+            <input id="bank-label" type="text" placeholder="Stinger A" />
+          </label>
+          <div class="row">
+            <button id="bank-save" class="btn primary" type="button">Assign to bank</button>
+            <button id="bank-fire" class="btn ghost" type="button">Test fire</button>
+            <button id="bank-clear" class="btn ghost" type="button">Unassign</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Push label + thumbnail to Companion</h2>
+          <p class="muted">
+            Optional. Sends this bank's name and a thumbnail to one Companion button so the Stream
+            Deck shows what it will play. Companion's HTTP API must be enabled under
+            Settings → HTTP.
+          </p>
+          <div class="deck-size">
+            <label class="field inline wide">
+              <span>Companion host</span>
+              <input id="companion-host" type="text" placeholder="127.0.0.1" />
+            </label>
+            <label class="field inline">
+              <span>Port</span>
+              <input id="companion-port" type="number" min="1" max="65535" />
+            </label>
+          </div>
+          <div class="deck-size">
+            <label class="field inline">
+              <span>Page</span>
+              <input id="companion-page" type="number" min="1" />
+            </label>
+            <label class="field inline">
+              <span>Row</span>
+              <input id="companion-row" type="number" min="0" />
+            </label>
+            <label class="field inline">
+              <span>Column</span>
+              <input id="companion-column" type="number" min="0" />
+            </label>
+          </div>
+          <div class="row">
+            <button id="companion-push" class="btn ghost" type="button">Push to Companion</button>
+          </div>
+          <p id="companion-status" class="status" hidden></p>
         </section>
       </section>
 

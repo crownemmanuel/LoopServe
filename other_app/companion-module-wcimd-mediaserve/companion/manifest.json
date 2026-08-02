@@ -1,0 +1,26 @@
+{
+  "id": "wcimd-mediaserve",
+  "name": "wcimd-mediaserve",
+  "shortname": "WCIMD Media",
+  "description": "Control WCIMD Media Serve loop stingers: list assets and set live media",
+  "version": "1.0.0",
+  "license": "MIT",
+  "repository": "git+https://github.com/wcimd/companion-module-wcimd-mediaserve.git",
+  "bugs": "https://github.com/wcimd/companion-module-wcimd-mediaserve/issues",
+  "maintainers": [
+    {
+      "name": "WCIMD",
+      "email": ""
+    }
+  ],
+  "runtime": {
+    "type": "node18",
+    "api": "nodejs-ipc",
+    "apiVersion": "0.0.0",
+    "entrypoint": "../src/main.js"
+  },
+  "legacyIds": [],
+  "manufacturer": "WCIMD",
+  "products": ["Media Serve"],
+  "keywords": ["media", "stinger", "loop", "video", "raspberry pi", "fullpageos"]
+}

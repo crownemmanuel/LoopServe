@@ -15,6 +15,11 @@
     { "name": "Assets", "description": "Media asset catalog" },
     { "name": "Live", "description": "Currently on-air asset" },
     { "name": "Events", "description": "Realtime live updates" },
+    {
+      "name": "Banks",
+      "description": "Stable trigger slots for Stream Deck / Companion buttons. A button fires a bank id forever; remapping which asset the bank holds happens in LoopServe."
+    },
+    { "name": "Companion", "description": "Helpers that talk to a Bitfocus Companion instance" },
     { "name": "System", "description": "Device power controls" }
   ],
   "paths": {
@@ -341,6 +346,239 @@
         }
       }
     },
+    "/api/trigger": {
+      "get": {
+        "tags": ["Banks"],
+        "summary": "List banks",
+        "description": "Every slot the grid defines (ids `1`…`rows × columns`), plus any stored bank outside that range, with its asset resolved.",
+        "operationId": "listBanks",
+        "responses": {
+          "200": {
+            "description": "Bank list and grid layout",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BanksResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Banks"],
+        "summary": "Set grid layout",
+        "description": "Changes how many slots the bank grid shows. Existing mappings are never deleted — a mapping outside the new grid is still listed and still fires.",
+        "operationId": "setBankGrid",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["grid"],
+                "properties": {
+                  "grid": { "$ref": "#/components/schemas/BankGrid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated bank list and grid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BanksResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Rows and columns must be between 1 and 16",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/trigger/{bankId}": {
+      "parameters": [
+        {
+          "name": "bankId",
+          "in": "path",
+          "required": true,
+          "description": "Stable bank id: 1–32 characters of letters, digits, `-` or `_`.",
+          "schema": { "type": "string" },
+          "example": "3"
+        }
+      ],
+      "post": {
+        "tags": ["Banks"],
+        "summary": "Fire a bank (Companion press)",
+        "description": "Sets the bank's mapped asset live. This is what a Stream Deck button calls. An empty bank is not an error — it returns `fired: false` so the button does not go red.",
+        "operationId": "fireBank",
+        "responses": {
+          "200": {
+            "description": "Fire result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FireResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid bank id",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Banks"],
+        "summary": "Get one bank",
+        "operationId": "getBank",
+        "responses": {
+          "200": {
+            "description": "Bank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "bank": { "$ref": "#/components/schemas/Bank" } }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Banks"],
+        "summary": "Map an asset to a bank",
+        "description": "Partial update: omitted fields are left alone, explicit `null` clears a field. This is the only call needed to remap a Stream Deck button — Companion is never touched.",
+        "operationId": "upsertBank",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BankUpsert" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated bank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "bank": { "$ref": "#/components/schemas/Bank" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Banks"],
+        "summary": "Unassign a bank",
+        "description": "Clears the asset binding but keeps the slot, its label and its Companion location.",
+        "operationId": "clearBank",
+        "responses": {
+          "200": {
+            "description": "Cleared bank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "bank": { "$ref": "#/components/schemas/Bank" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trigger/{bankId}/clear-binding": {
+      "post": {
+        "tags": ["Banks"],
+        "summary": "Unassign a bank (POST alias)",
+        "description": "Same as `DELETE /api/trigger/{bankId}`, for clients that only send POST.",
+        "operationId": "clearBankBinding",
+        "parameters": [
+          {
+            "name": "bankId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "3"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cleared bank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "bank": { "$ref": "#/components/schemas/Bank" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companion/style": {
+      "post": {
+        "tags": ["Companion"],
+        "summary": "Push a button style to Companion",
+        "description": "Server-side proxy for Companion's `POST /api/location/{page}/{row}/{column}/style`. LoopServe forwards the call because Companion's HTTP API sends no CORS headers. Companion's HTTP API must be enabled.",
+        "operationId": "pushCompanionStyle",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompanionStylePush" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Companion accepted the style",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "target": { "type": "string" },
+                    "response": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Companion unreachable or rejected the request",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      }
+    },
     "/api/system/shutdown": {
       "post": {
         "tags": ["System"],
@@ -392,7 +630,7 @@
       "get": {
         "tags": ["Events"],
         "summary": "Live event stream (SSE)",
-        "description": "Server-Sent Events stream. Each message is JSON: `{ \"live\": Asset | null }`.",
+        "description": "Server-Sent Events stream. Each message is JSON tagged with a `type`: `{ \"type\": \"live\", \"live\": Asset | null }` when the on-air asset changes, or `{ \"type\": \"banks\", \"banks\": [...], \"grid\": {...} }` when bank mappings change. Ignore messages without the key you care about.",
         "operationId": "liveEvents",
         "responses": {
           "200": {
@@ -443,6 +681,130 @@
             "nullable": true,
             "allOf": [{ "$ref": "#/components/schemas/Asset" }]
           }
+        }
+      },
+      "BankGrid": {
+        "type": "object",
+        "description": "Bank grid layout. Defaults to a Stream Deck XL-shaped 4 × 8.",
+        "required": ["rows", "columns"],
+        "properties": {
+          "rows": { "type": "integer", "minimum": 1, "maximum": 16, "example": 4 },
+          "columns": { "type": "integer", "minimum": 1, "maximum": 16, "example": 8 }
+        }
+      },
+      "CompanionLocation": {
+        "type": "object",
+        "description": "Where this bank's button sits on a Companion page, used by the style-push helper.",
+        "required": ["page", "row", "column"],
+        "properties": {
+          "page": { "type": "integer", "example": 1 },
+          "row": { "type": "integer", "example": 0 },
+          "column": { "type": "integer", "example": 2 },
+          "pushStyle": { "type": "boolean", "default": false }
+        }
+      },
+      "Bank": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "3" },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Custom label if set, otherwise the mapped asset's name.",
+            "example": "Stinger A"
+          },
+          "customLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The label typed by the user, if any."
+          },
+          "assetId": { "type": "string", "nullable": true, "example": "abc123xyz0" },
+          "asset": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/Asset" }]
+          },
+          "companion": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/CompanionLocation" }]
+          },
+          "live": {
+            "type": "boolean",
+            "description": "This bank's asset is currently on air."
+          },
+          "missing": {
+            "type": "boolean",
+            "description": "The bank points at an asset that no longer exists."
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "BankUpsert": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Asset to fire. `null` unassigns the bank.",
+            "example": "abc123xyz0"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Override the button label. `null` falls back to the asset name."
+          },
+          "companion": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/CompanionLocation" }]
+          }
+        }
+      },
+      "BanksResponse": {
+        "type": "object",
+        "properties": {
+          "banks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Bank" }
+          },
+          "grid": { "$ref": "#/components/schemas/BankGrid" }
+        }
+      },
+      "FireResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "fired": {
+            "type": "boolean",
+            "description": "False when the bank is empty or points at a deleted asset."
+          },
+          "bankId": { "type": "string", "example": "3" },
+          "assetId": { "type": "string", "nullable": true },
+          "reason": {
+            "type": "string",
+            "description": "Present only when `fired` is false."
+          },
+          "live": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/Asset" }]
+          }
+        }
+      },
+      "CompanionStylePush": {
+        "type": "object",
+        "required": ["host", "page", "row", "column"],
+        "properties": {
+          "host": { "type": "string", "example": "127.0.0.1" },
+          "port": { "type": "integer", "default": 8000 },
+          "page": { "type": "integer", "example": 1 },
+          "row": { "type": "integer", "example": 0 },
+          "column": { "type": "integer", "example": 2 },
+          "text": { "type": "string", "example": "Stinger A" },
+          "png64": {
+            "type": "string",
+            "description": "PNG as a data URI. A bare base64 string is accepted and gets the prefix added.",
+            "example": "data:image/png;base64,iVBORw0KGgo..."
+          },
+          "bgcolor": { "type": "string", "example": "#000000" },
+          "color": { "type": "string", "example": "#FFFFFF" }
         }
       },
       "Error": {

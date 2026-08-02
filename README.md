@@ -11,6 +11,7 @@ Originally built for church production workflows; useful anywhere you need a sim
 - **Embedded media server** — no separate Node/Pi project required for desktop use
 - **Fullscreen output** — pick a monitor; black idle screen until something is live
 - **Media library** — upload, replace (same ID), delete, set live / clear
+- **Trigger banks** — Stream Deck–style grid; Companion buttons fire a bank number, you remap what it plays without touching Companion
 - **REST + SSE API** — Companion-friendly endpoints and OpenAPI schema
 - **Opt-in auto-updates** — checks GitHub Releases; you choose Update / Later / Skip
 - **Cross-platform** — macOS, Windows, and Linux (via Tauri)
@@ -67,7 +68,10 @@ Default base URL: `http://127.0.0.1:8787`
 | `GET` | `/api/assets` | List assets |
 | `POST` | `/api/live/:id` | Set live asset |
 | `GET` | `/api/live` | Current live state |
-| `GET` | `/api/events` | SSE live updates |
+| `GET` | `/api/events` | SSE live + bank updates |
+| `GET` | `/api/trigger` | List trigger banks and grid |
+| `PUT` | `/api/trigger/:bankId` | Map an asset to a bank |
+| `POST` | `/api/trigger/:bankId` | Fire a bank (what Companion calls) |
 | `GET` | `/api/docs` | Swagger UI |
 | `GET` | `/openapi.json` | OpenAPI document |
 
@@ -75,7 +79,26 @@ See the in-app schema (**Open API schema** button) for full details.
 
 ## Companion
 
-A Bitfocus Companion module can target this host and port to set live media by asset ID or name. If you maintain a separate Companion package, point it at LoopServe’s API (`/api/assets`, `/api/live/:id`).
+The Bitfocus Companion module lives in [`other_app/companion-module-wcimd-mediaserve`](./other_app/companion-module-wcimd-mediaserve). Point it at this host and port.
+
+### Trigger banks
+
+Companion's API cannot rewrite a button's action from outside, so assigning a new video to a Stream
+Deck button normally means editing Companion every time. Banks put that indirection in LoopServe:
+
+```text
+Stream Deck press
+  → Companion action "Trigger Bank", bankId = 3
+  → POST http://LOOPSERVE_HOST:8787/api/trigger/3
+  → LoopServe looks up bank 3 → asset → sets it live
+```
+
+1. In Companion, create buttons with the **Trigger Bank** action and bank ids `1`, `2`, `3`, …
+2. In LoopServe → **Banks**, click a slot and assign an asset to it.
+3. Remapping later is a LoopServe-only change — the Companion button keeps calling bank `3` forever.
+
+Bank mappings persist in `banks.json` next to `assets.json` in the app data folder. The Banks tab can
+also push a label and thumbnail to a Companion button (Companion → Settings → HTTP must be enabled).
 
 ## Releases & updates
 

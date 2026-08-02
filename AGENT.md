@@ -2,6 +2,34 @@
 
 Instructions for releasing and for the in-app auto-updater.
 
+## Repository layout
+
+| Path | What it is |
+| --- | --- |
+| `src/`, `index.html` | Tauri shell UI (Control / Banks / Media library tabs), vanilla TS |
+| `src-tauri/src/server.rs` | Embedded Axum server: assets, live, banks, SSE |
+| `src-tauri/resources/public/` | Pages the embedded server serves (display + admin) |
+| `src-tauri/resources/openapi.json` | API schema served at `/openapi.json` |
+| `other_app/companion-module-wcimd-mediaserve/` | Bitfocus Companion module (its own npm project) |
+
+The Companion module is a separate npm project — build its upload package with
+`npm install && npm run package` from inside that folder. The resulting `.tgz` is gitignored.
+
+## Trigger banks
+
+Banks are stable slots (`banks.json` in the app data dir) that Companion buttons fire by number, so
+remapping which asset plays never requires editing a Companion action. See `/api/trigger*` in
+`server.rs` and the Banks tab in `src/main.ts`. Backend behaviour is covered by tests in
+`server.rs` — run them with `cargo test --lib` from `src-tauri/`.
+
+Two things worth knowing before changing this area:
+
+- The SSE stream on `/api/events` now carries both `{ "type": "live", ... }` and
+  `{ "type": "banks", ... }` messages. Consumers must ignore messages that lack the key they want —
+  `display.js` blanks the output if handed a payload with no `live` field.
+- Firing an empty bank returns `200` with `fired: false`, not an error status, so a Stream Deck
+  button does not go red for a state that is perfectly normal.
+
 ## Where the updater keys go
 
 Tauri signs release artifacts with a **minisign** keypair.

@@ -69,6 +69,8 @@
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        // The stream also carries bank-mapping events; only live changes touch the output.
+        if (!data || !("live" in data)) return;
         playAsset(data.live);
       } catch {
         // ignore malformed events
